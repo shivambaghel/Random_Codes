@@ -1,0 +1,27 @@
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api")
+public class MyController {
+
+    @Autowired
+    private ElasticsearchRepository elasticsearchRepository;
+
+    @GetMapping("/documents/{dealId}")
+    public ResponseEntity<MyDocument> getDocumentByDealId(@PathVariable String dealId) {
+        try {
+            MyDocument document = elasticsearchRepository.fetchDocumentByDealId(dealId);
+            if (document != null) {
+                return ResponseEntity.ok(document);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (IOException e) {
+            // Handle exception as needed
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+}
