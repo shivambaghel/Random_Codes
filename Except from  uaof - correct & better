@@ -1,0 +1,40 @@
+public void saveOrUpdateKycData(KycDataPayload payload) throws IOException {
+    KycDataPayload.KycData kycData = payload.getKycdata().get(0);
+    String dealId = kycData.getDealId();
+    String gfcid = kycData.getGfcid();
+    String countryCode = kycData.getCountryCode();
+    SearchRequest searchRequest = new SearchRequest("your_index_name");
+    BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+    queryBuilder.must(QueryBuilders.termQuery("dealId", dealId));
+    queryBuilder.must(QueryBuilders.termQuery("gfcid", gfcid));
+    queryBuilder.must(QueryBuilders.termQuery("countryCode", countryCode));
+    searchRequest.source(new SearchSourceBuilder().query(queryBuilder));
+    SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+    if (searchResponse.getHits().getTotalHits().value > 0) {
+        String idToUpdate = searchResponse.getHits().getAt(0).getId();
+        XContentBuilder docBuilder = XContentFactory.jsonBuilder();
+        docBuilder.startObject();
+        docBuilder.field("dealId", kycData.getDealId());
+        docBuilder.field("gfcid", kycData.getGfcid());
+        docBuilder.field("countryCode", kycData.getCountryCode());
+        docBuilder.field("product", kycData.getProduct());
+        docBuilder.field("status", kycData.getStatus());
+        docBuilder.endObject();
+        UpdateRequest updateRequest = new UpdateRequest("your_index_name", idToUpdate)
+            .doc(docBuilder);
+        UpdateResponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
+    } else {
+        XContentBuilder docBuilder = XContentFactory.jsonBuilder();
+        docBuilder.startObject();
+        docBuilder.field("dealId", kycData.getDealId());
+        docBuilder.field("gfcid", kycData.getGfcid());
+        docBuilder.field("countryCode", kycData.getCountryCode());
+        docBuilder.field("product", kycData.getProduct());
+        docBuilder.field("status", kycData.getStatus());
+        docBuilder.endObject();
+        IndexRequest indexRequest = new IndexRequest("your_index_name")
+            .id(dealId)
+            .source(docBuilder);
+        IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
+    }
+}
