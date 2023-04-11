@@ -1,0 +1,49 @@
+import java.io.IOException;
+import java.util.List;
+
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class KycDataService {
+
+    @Autowired
+    private RestHighLevelClient client;
+
+    public void saveOrUpdateKycData(KycDataPayload payload) throws IOException {
+        KycDataPayload.KycData kycData = payload.getKycdata().get(0);
+        if (kycData.getStatus() == null || kycData.getStatus().isEmpty()) {
+            String dealId = kycData.getDealId();
+            String gfcid = kycData.getGfcid();
+            SearchRequest searchRequest = new SearchRequest("your_index_name");
+            searchRequest.source(new SearchSourceBuilder()
+                .query(QueryBuilders.boolQuery()
+                    .must(QueryBuilders.termQuery("dealId", dealId))
+                    .must(QueryBuilders.termQuery("gfcid", gfcid))));
+            SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+            if (searchResponse.getHits().getTotalHits().value > 0) {
+                String idToDelete = searchResponse.getHits().getAt(0).getId();
+                DeleteRequest deleteRequest = new DeleteRequest("your_index_name", idToDelete);
+                client.delete(deleteRequest, RequestOptions.DEFAULT);
+            }
+            IndexRequest indexRequest = new IndexRequest("your_index_name")
+                .id(kycData.getDealId())
+                .source(KycDataPayload.toJsonString(payload));
+            IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
+        } else {
+            IndexRequest indexRequest = new IndexRequest("your_index_name")
+                .id(kycData.getDealId())
+                .source(KycDataPayload.toJsonString(payload));
+            IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
+        }
+    }
+}
