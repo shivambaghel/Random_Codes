@@ -1,0 +1,71 @@
+import java.io.IOException;
+import java.util.List;
+
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class KycDataService {
+
+    @Autowired
+    private RestHighLevelClient client;
+
+    public void saveKycData(KycDataPayload payload) throws IOException {
+        KycDataPayload.KycData kycData = payload.getKycdata().get(0);
+        XContentBuilder docBuilder = XContentFactory.jsonBuilder();
+        docBuilder.startObject();
+        docBuilder.field("dealId", kycData.getDealId());
+        docBuilder.field("gfcid", kycData.getGfcid());
+        docBuilder.field("countryCode", kycData.getCountryCode());
+        docBuilder.field("product", kycData.getProduct());
+        docBuilder.endObject();
+        IndexRequest indexRequest = new IndexRequest("your_index_name")
+            .id(kycData.getDealId())
+            .source(docBuilder);
+        IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
+    }
+
+    public void saveOrUpdateKycData(KycDataPayload payload) throws IOException {
+        KycDataPayload.KycData kycData = payload.getKycdata().get(0);
+        if (kycData.getStatus() == null || kycData.getStatus().isEmpty()) {
+            String dealId = kycData.getDealId();
+            String gfcid = kycData.getGfcid();
+            String countryCode = kycData.getCountryCode();
+            SearchRequest searchRequest = new SearchRequest("your_index_name");
+            BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+            queryBuilder.must(QueryBuilders.termQuery("dealId", dealId));
+            queryBuilder.must(QueryBuilders.termQuery("gfcid", gfcid));
+            queryBuilder.must(QueryBuilders.termQuery("countryCode", countryCode));
+            searchRequest.source(new SearchSourceBuilder().query(queryBuilder));
+            SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+            if (searchResponse.getHits().getTotalHits().value > 0) {
+                String idToUpdate = searchResponse.getHits().getAt(0).getId();
+                XContentBuilder docBuilder = XContentFactory.jsonBuilder();
+                docBuilder.startObject();
+                docBuilder.field("dealId", kycData.getDealId());
+                docBuilder.field("gfcid", kycData.getGfcid());
+                docBuilder.field("countryCode", kycData.getCountryCode());
+                docBuilder.field("product", kycData.getProduct());
+                docBuilder.endObject();
+                UpdateRequest updateRequest = new UpdateRequest("your_index_name", idToUpdate)
+                    .doc(docBuilder);
+                UpdateResponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
+            } else {
+                XContentBuilder docBuilder = XContentFactory.jsonBuilder();
+                docBuilder.startObject();
+                docBuilder.field("dealId",
