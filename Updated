@@ -1,0 +1,45 @@
+@PostMapping("/")
+public ResponseEntity<String> addDeal(@RequestBody Deal deal) {
+    try {
+        String dealId = deal.getDealId();
+        boolean exists = restHighLevelClient.exists(
+                new GetRequest("deals", "_doc", dealId), RequestOptions.DEFAULT);
+
+        // If the deal ID already exists in the index, delete the existing document
+        if (exists) {
+            DeleteResponse deleteResponse = restHighLevelClient.delete(
+                    new DeleteRequest("deals", "_doc", dealId), RequestOptions.DEFAULT);
+            if (deleteResponse.getResult() != DocWriteResponse.Result.DELETED) {
+                throw new RuntimeException("Failed to delete existing document");
+            }
+        }
+
+        // Convert Deal object to XContentBuilder
+        XContentBuilder builder = XContentFactory.jsonBuilder();
+        builder.startObject();
+        builder.field("dealId", deal.getDealId());
+        builder.startArray("Clients");
+        for (Client client : deal.getClients()) {
+            builder.startObject();
+            builder.field("gfcid", client.getGfcid());
+            builder.field("countryCode", client.getCountryCode());
+            builder.field("CoreReq", client.getCoreReq());
+            builder.field("AppxReq", client.getAppxReq());
+            builder.field("product", client.getProduct());
+            builder.endObject();
+        }
+        builder.endArray();
+        builder.endObject();
+
+        // Index the new document
+        IndexResponse response = restHighLevelClient.index(
+                new IndexRequest("deals", "_doc", dealId)
+                        .source(builder)
+                        .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE),
+                RequestOptions.DEFAULT);
+        return new ResponseEntity<>("success", HttpStatus.OK);
+    } catch (Exception e) {
+        e.printStackTrace();
+        return new ResponseEntity<>("failure", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
