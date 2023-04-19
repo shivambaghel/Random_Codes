@@ -1,0 +1,80 @@
+import java.io.IOException;
+import java.util.List;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class SearchController {
+
+    private final ElasticSearchService elasticSearchService;
+
+    public SearchController(ElasticSearchService elasticSearchService) {
+        this.elasticSearchService = elasticSearchService;
+    }
+
+    @GetMapping("/search/{dealId}")
+    public List<Deal> searchByDealId(@PathVariable String dealId) throws IOException {
+        return elasticSearchService.searchByDealId(dealId);
+    }
+}
+
+
+
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.text.Text;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.springframework.stereotype.Service;
+
+@Service
+public class ElasticSearchService {
+
+    private final RestHighLevelClient restHighLevelClient;
+
+    public ElasticSearchService(RestHighLevelClient restHighLevelClient) {
+        this.restHighLevelClient = restHighLevelClient;
+    }
+
+    public List<Deal> searchByDealId(String dealId) throws IOException {
+        SearchRequest searchRequest = new SearchRequest("index-name");
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(QueryBuilders.termQuery("dealId", dealId));
+        searchRequest.source(searchSourceBuilder);
+
+        SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+        SearchHits searchHits = searchResponse.getHits();
+        List<Deal> deals;
+
+        if (searchHits.getTotalHits().value > 0) {
+            deals = new ArrayList<>();
+            for (SearchHit hit : searchHits.getHits()) {
+                String source = hit.getSourceAsString();
+                Client client;
+                try {
+                    client = ObjectMapper.readValue(source, Client.class);
+                } catch (IOException e) {
+                    client = new Client();
+                }
+                deals.add(new Deal(dealId, Arrays.asList(client)));
+            }
+        } else {
+            Client client = new Client();
+            deals = Arrays.asList(new Deal(dealId, Arrays.asList(client)));
+        }
+
+        return deals;
+    }
+}
