@@ -78,3 +78,22 @@ public class ElasticSearchService {
         return deals;
     }
 }
+
+
+
+
+if (searchHits.getTotalHits().value > 0) {
+    deals = Arrays.stream(searchHits.getHits())
+                  .map(SearchHit::getSourceAsString)
+                  .map(source -> {
+                      try {
+                          return new Deal(dealId, Arrays.asList(ObjectMapper.readValue(source, Client.class)));
+                      } catch (IOException e) {
+                          return new Deal(dealId, Arrays.asList(new Client()));
+                      }
+                  })
+                  .collect(Collectors.toList());
+} else {
+    Client client = new Client();
+    deals = Arrays.asList(new Deal(dealId, Arrays.asList(client)));
+}
