@@ -1,0 +1,135 @@
+@RestController
+@RequestMapping("/api")
+public class ClientController {
+
+    @Autowired
+    private RestHighLevelClient restHighLevelClient;
+
+    @GetMapping("/clients/{dealId}")
+    public ClientIndex getClientIndex(@PathVariable String dealId) throws IOException {
+        SearchRequest searchRequest = new SearchRequest("clients");
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(getQuery(dealId));
+        searchRequest.source(searchSourceBuilder);
+
+        SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+
+        ClientIndex clientIndex = parseResponse(searchResponse, dealId);
+
+        if (clientIndex == null || clientIndex.getClients() == null || clientIndex.getClients().isEmpty()) {
+            clientIndex = new ClientIndex();
+            clientIndex.setDealId(dealId);
+            List<Client> defaultClients = new ArrayList<>();
+            defaultClients.add(new Client("N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"));
+            clientIndex.setClients(defaultClients);
+        }
+
+        return clientIndex;
+    }
+
+    private QueryBuilder getQuery(String dealId) {
+        return QueryBuilders.termQuery("dealId", dealId);
+    }
+
+    private ClientIndex parseResponse(SearchResponse searchResponse, String dealId) {
+        SearchHit[] searchHits = searchResponse.getHits().getHits();
+        if (searchHits.length > 0) {
+            ClientIndex clientIndex = new ClientIndex();
+            clientIndex.setDealId(dealId);
+            List<Client> clients = new ArrayList<>();
+            for (SearchHit hit : searchHits) {
+                String source = hit.getSourceAsString();
+                try {
+                    Client client = new ObjectMapper().readValue(source, Client.class);
+                    clients.add(client);
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+            }
+            clientIndex.setClients(clients);
+            return clientIndex;
+        }
+        return null;
+ 
+
+
+
+
+public List<Map<String, Object>> searchDeal(String dealId) throws IOException {
+    SearchRequest searchRequest = new SearchRequest("your_index_name");
+    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+    searchSourceBuilder.query(QueryBuilders.matchAllQuery()); // match all documents
+    searchSourceBuilder.size(1000); // set the maximum number of documents to return
+    searchRequest.source(searchSourceBuilder);
+
+    SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+
+    SearchHits hits = searchResponse.getHits();
+
+    List<Map<String, Object>> matchedDeals = new ArrayList<>();
+
+    for (SearchHit searchHit : hits) {
+        Map<String, Object> sourceAsMap = searchHit.getSourceAsMap();
+        if (sourceAsMap.get("dealId").equals(dealId)) {
+            List<Map<String, Object>> clients = (List<Map<String, Object>>) sourceAsMap.get("Client");
+            for (Map<String, Object> client : clients) {
+                if (!client.containsKey("qfcid")) {
+                    client.put("qfcid", "N");
+                }
+                if (!client.containsKey("countryCode")) {
+                    client.put("countryCode", "N");
+                }
+                if (!client.containsKey("Status")) {
+                    client.put("Status", "N");
+                }
+                if (!client.containsKey("CoreReq")) {
+                    client.put("CoreReq", "N");
+                }
+                if (!client.containsKey("CoreStatus")) {
+                    client.put("CoreStatus", "N");
+                }
+                if (!client.containsKey("AppxReq")) {
+                    client.put("AppxReq", "N");
+                }
+                if (!client.containsKey("AppxStatus")) {
+                    client.put("AppxStatus", "N");
+                }
+                if (!client.containsKey("BIFReq")) {
+                    client.put("BIFReq", "N");
+                }
+                if (!client.containsKey("BIFStatus")) {
+                    client.put("BIFStatus", "N");
+                }
+                if (!client.containsKey("PUPReq")) {
+                    client.put("PUPReq", "N");
+                }
+                if (!client.containsKey("PUPStatus")) {
+                    client.put("PUPStatus", "N");
+                }
+                if (!client.containsKey("TFReq")) {
+                    client.put("TFReq", "N");
+                }
+                if (!client.containsKey("TFStatus")) {
+                    client.put("TFStatus", "N");
+                }
+                if (!client.containsKey("WLReq")) {
+                    client.put("WLReq", "N");
+                }
+                if (!client.containsKey("WlStatus")) {
+                    client.put("WlStatus", "N");
+                }
+                if (!client.containsKey("product")) {
+                    client.put("product", "N");
+                }
+            }
+            matchedDeals.add(sourceAsMap);
+        }
+    }
+
+    if (matchedDeals.isEmpty()) {
+        throw new ResourceNotFoundException("Deal with id: " + dealId + " not found");
+    }
+
+    return matchedDeals;
+}
+
