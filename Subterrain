@@ -1,0 +1,22 @@
+String dealId = "1-8X61RBPM";
+GetRequest getRequest = new GetRequest("index_name", "type_name", dealId);
+GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
+Map<String, Object> sourceAsMap = getResponse.getSourceAsMap();
+
+ObjectMapper objectMapper = new ObjectMapper();
+Example example = objectMapper.convertValue(sourceAsMap, Example.class);
+
+Map<String, Object> resultMap = new HashMap<>();
+resultMap.put("Deal Name", example.getDealName());
+resultMap.put("Status", example.getStatus());
+resultMap.put("Created Date", example.getCreatedDate());
+
+List<Map<String, Object>> clientList = new ArrayList<>();
+List<Client> clients = example.getClient();
+for (Client client : clients) {
+    Map<String, Object> clientMap = new ObjectMapper().convertValue(client, Map.class);
+    clientList.add(clientMap);
+}
+
+resultMap.put("Clients", clientList);
+System.out.println(resultMap);
