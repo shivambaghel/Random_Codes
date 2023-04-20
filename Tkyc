@@ -1,0 +1,35 @@
+import java.util.ArrayList;
+import java.util.List;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class KYCStandaloneService {
+    
+    private RestHighLevelClient client;
+    
+    public KYCStandaloneService(RestHighLevelClient client) {
+        this.client = client;
+    }
+    
+    public List<KYCStandalone> getAllKYCStandaloneDeals() throws Exception {
+        SearchRequest searchRequest = new SearchRequest("your_index_name_here");
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(QueryBuilders.matchAllQuery());
+        searchRequest.source(searchSourceBuilder);
+        SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<KYCStandalone> kycStandaloneList = new ArrayList<>();
+        for (SearchHit hit : searchResponse.getHits().getHits()) {
+            String sourceAsString = hit.getSourceAsString();
+            KYCStandalone kycStandalone = objectMapper.readValue(sourceAsString, KYCStandalone.class);
+            kycStandaloneList.add(kycStandalone);
+        }
+        return kycStandaloneList;
+    }
+}
