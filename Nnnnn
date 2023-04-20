@@ -1,0 +1,165 @@
+public class UAOFFetchkycRequest {
+    private String createdBy;
+    private String createdDate;
+    private String dealId;
+    private String dealName;
+    private String formReadOnly;
+    private String kycPending;
+    private String stageOrder;
+    private String status;
+    private List<UAOFFetchKYCClients> client;
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public String getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(String createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public String getDealId() {
+        return dealId;
+    }
+
+    public void setDealId(String dealId) {
+        this.dealId = dealId;
+    }
+
+    public String getDealName() {
+        return dealName;
+    }
+
+    public void setDealName(String dealName) {
+        this.dealName = dealName;
+    }
+
+    public String getFormReadOnly() {
+        return formReadOnly;
+    }
+
+    public void setFormReadOnly(String formReadOnly) {
+        this.formReadOnly = formReadOnly;
+    }
+
+    public String getKycPending() {
+        return kycPending;
+    }
+
+    public void setKycPending(String kycPending) {
+        this.kycPending = kycPending;
+    }
+
+    public String getStageOrder() {
+        return stageOrder;
+    }
+
+    public void setStageOrder(String stageOrder) {
+        this.stageOrder = stageOrder;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public List<UAOFFetchKYCClients> getClient() {
+        return client;
+    }
+
+    public void setClient(List<UAOFFetchKYCClients> client) {
+        this.client = client;
+    }
+
+    public Map<String, Object> fetchFieldValues(Map<String, Object> sourceAsMap) {
+        Logger.info("sourceAsMap: " + sourceAsMap);
+        UAOFFetchkycRequest kycRequest = objectMapper.convertValue(sourceAsMap, UAOFFetchkycRequest.class);
+        Map<String, Object> resultMap = new HashMap<>();
+        resultMap.put("createdBy", kycRequest.getCreatedBy());
+        resultMap.put("createdDate", kycRequest.getCreatedDate());
+        resultMap.put("dealId", kycRequest.getDealId());
+        resultMap.put("dealName", kycRequest.getDealName());
+        resultMap.put("formReadOnly", kycRequest.getFormReadOnly());
+        resultMap.put("kycPending", kycRequest.getKycPending());
+        resultMap.put("stageOrder", kycRequest.getStageOrder());
+        resultMap.put("status", kycRequest.getStatus());
+        List<Map<String, Object>> clientList = new ArrayList<>();
+        List<UAOFFetchKYCClients> clients = kycRequest.getClient();
+        for (UAOFFetchKYCClients client : clients) {
+            Map<String, Object> clientMap = new ObjectMapper().convertValue(client, Map.class);
+            // Update BIFReg and PUPReg based on client owner and NTB flag
+            if ((client.getClientOwner().equals("LB") || client.getClientOwner().equals("CCB")) && client.getNTB().equals("Y")) {
+                clientMap.put("BIFReq", "Y");
+                clientMap.put("PUPReq", "Y");
+            }
+            // Update TFReg and WLReg based on KYCReq, PUPReq, and T&F or WorldLink flag
+
+
+
+
+for (UAOFFetchKYCClients client : clients) {
+Map<String, Object> clientMap = new ObjectMapper().convertValue(client, Map.class);
+
+String clientOwner = (String) clientMap.get("clientOwner");
+String ntbFlag = (String) ttsCompanyMap.get("NTBFlag");
+
+boolean isLbCcbClient = clientOwner.equals("LB") || clientOwner.equals("CCB");
+boolean isNtbY = ntbFlag.equals("Y");
+boolean isBifPupRequired = isLbCcbClient && isNtbY;
+
+if (isBifPupRequired) {
+clientMap.put("BIFReq", "Y");
+clientMap.put("PUPReq", "Y");
+}
+
+String kycReq = (String) kycDataMap.get("KYCReq");
+String pupReq = (String) clientMap.get("PUPReq");
+String tfReq = (String) clientMap.get("TFReq");
+String wlReq = (String) kycDataMap.get("WLReg");
+
+boolean isKycReqY = kycReq.equals("Y");
+boolean isPupReqY = pupReq.equals("Y");
+boolean isTfReqY = tfReq.equals("Y");
+boolean isWlReqY = wlReq.equals("Y");
+
+if (isKycReqY && isPupReqY && isTfReqY) {
+clientMap.put("TFReq", "Y");
+clientMap.put("IFReq", "Y");
+}
+
+if (isKycReqY && isPupReqY && isWlReqY) {
+clientMap.put("WIRE", "Y");
+}
+
+boolean isCoreCompleted = clientMap.get("CoreStatus").equals("C");
+boolean isAppxCompleted = clientMap.get("AppxStatus").equals("C");
+boolean isBieCompleted = clientMap.get("BIEStatus").equals("C");
+boolean isPupCompleted = clientMap.get("PUPStatus").equals("C");
+boolean isTfCompleted = clientMap.get("TFStatus").equals("C");
+boolean isWlCompleted = clientMap.get("WlStatus").equals("C");
+
+if (isCoreCompleted && isAppxCompleted && isBieCompleted && isPupCompleted && isTfCompleted && isWlCompleted) {
+clientMap.put("Status", "C");
+} else if (!isCoreCompleted && !isAppxCompleted && !isBieCompleted && !isPupCompleted && !isTfCompleted && !isWlCompleted) {
+clientMap.put("Status", "Nele P");
+}
+
+clientList.add(clientMap);
+}
+
+resultMap.put("Client", clientList);
+Logger.info("resultMap: " + resultMap);
+
+return resultMap;
+
+
