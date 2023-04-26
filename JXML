@@ -1,0 +1,16 @@
+try {
+    Map<String, Object> response = widgetkycService.getUAOFKyDetails(dealId, requestFrom, accessToken);
+    Map<String, Object> filteredResponse = new HashMap<>();
+    filteredResponse.put("status", response.get("status"));
+    filteredResponse.put("dealid", response.get("dealid"));
+
+    if (requestFrom != null && requestFrom.equals("ws")) {
+        ObjectMapper xmlMapper = new XmlMapper();
+        String xmlString = xmlMapper.writeValueAsString(filteredResponse);
+        return ResponseEntity.ok(xmlString);
+    } else {
+        return ResponseEntity.ok(filteredResponse);
+    }
+} catch (Exception e) {
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getCause().toString());
+}
