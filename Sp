@@ -1,0 +1,168 @@
+CREATE PROCEDURE GetCompanyData
+
+AS
+
+BEGIN
+
+    SET NOCOUNT ON;
+
+    
+
+    DECLARE @JsonResponse NVARCHAR(MAX);
+
+    
+
+    SELECT @JsonResponse = (
+
+        SELECT DISTINCT a.soeid AS soeid,
+
+            (
+
+                SELECT Typel AS coverageTypeld
+
+                FROM crmdb..companyteamtb
+
+                FOR JSON PATH
+
+            ) AS coverageTypeld,
+
+            (
+
+                SELECT b.gfcid AS gfcid
+
+                FROM crmdb..companyteamtb a
+
+                INNER JOIN crmdb..CompanyTb b ON a.clnti = b.clnti
+
+                FOR JSON PATH
+
+            ) AS gfcid,
+
+            (
+
+                SELECT RegionN AS regionScope
+
+                FROM clientmapdb..Lkgeographytb a
+
+                INNER JOIN companyteamtb b ON a.Country!SO2 = b.UserCountry150Cod
+
+                FOR JSON PATH
+
+            ) AS regionScope,
+
+            (
+
+                SELECT UserlCountryISOCode AS CountryScope
+
+                FROM crmdb..companyteamtb
+
+                FOR JSON PATH
+
+            ) AS CountryScope,
+
+            (
+
+                SELECT rolei AS roleld
+
+                FROM crmdb..companyteamtb
+
+                FOR JSON PATH
+
+            ) AS roleld,
+
+            (
+
+                SELECT b.Rolen AS roleName
+
+                FROM crmdb..companyteamtb a
+
+                INNER JOIN [LkCvrgMemberRoleTb] b ON a.Rolel = b.Rolel
+
+                FOR JSON PATH
+
+            ) AS roleName,
+
+            (
+
+                SELECT Product! AS productld
+
+                FROM crmdb..companyteamtb
+
+                FOR JSON PATH
+
+            ) AS productld,
+
+            (
+
+                SELECT DISTINCT a.soeid AS [soeid (CreatedBy)]
+
+                FROM coredb..employeevw a
+
+                INNER JOIN crmdb..companyteamtb b ON a.ritsid = b.UpdUseri
+
+                FOR JSON PATH
+
+            ) AS [soeid (CreatedBy)],
+
+            (
+
+                SELECT DISTINCT a.soeid AS [soeid (modifiedby)]
+
+                FROM coredb..employeevw a
+
+                INNER JOIN crmdb..companyteamtb b ON a.ritsid = b.UpdUserl
+
+                FOR JSON PATH
+
+            ) AS [soeid (modifiedby)],
+
+            (
+
+                SELECT CompanyTeam! AS integrationld
+
+                FROM crmdb..companyteamtb
+
+                FOR JSON PATH
+
+            ) AS integrationld,
+
+            'BCMA' AS systemIdentifier
+
+        FROM coredb..employeevw a
+
+        INNER JOIN crmdb..companyteamtb b ON a.ritsid = b.useri
+
+        FOR JSON PATH
+
+    );
+
+    
+
+    SELECT @JsonResponse AS JsonResponse;
+
+END;
+
+
+
+
+
+
+
+public class CompanyData {
+    private String soeid;
+    private String coverageTypeld;
+    private String gfcid;
+    private String regionScope;
+    private String CountryScope;
+    private String roleld;
+    private String roleName;
+    private String productld;
+    private String soeidCreatedBy;
+    private String soeidModifiedBy;
+    private String integrationld;
+    private String systemIdentifier;
+
+    // getters and setters
+}
+
+
