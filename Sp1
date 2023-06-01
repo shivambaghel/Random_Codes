@@ -1,0 +1,206 @@
+CREATE PROCEDURE GetCompanyTeamDetails
+
+    @soeid VARCHAR(50) OUTPUT,
+
+    @coverageTypeld INT OUTPUT,
+
+    @gfcid INT OUTPUT,
+
+    @regionScope VARCHAR(50) OUTPUT,
+
+    @CountryScope VARCHAR(50) OUTPUT,
+
+    @roleld INT OUTPUT,
+
+    @roleName VARCHAR(50) OUTPUT,
+
+    @productld VARCHAR(50) OUTPUT,
+
+    @soeidCreatedBy VARCHAR(50) OUTPUT,
+
+    @soeidModifiedBy VARCHAR(50) OUTPUT,
+
+    @integrationld INT OUTPUT,
+
+    @systemIdentifier VARCHAR(50) = 'BCMA'
+
+AS
+
+BEGIN
+
+    SET NOCOUNT ON;
+
+    -- soeid
+
+    SELECT DISTINCT a.soeid
+
+    INTO #TempSoeid
+
+    FROM coredb..employeevw a
+
+    INNER JOIN crmdb..companyteamtb b ON a.ritsid = b.useri;
+
+    SET @soeid = (SELECT TOP 1 soeid FROM #TempSoeid);
+
+    -- coverageTypeld
+
+    SELECT Typel
+
+    INTO #TempCoverageType
+
+    FROM crmdb..companyteamtb;
+
+    SET @coverageTypeld = (SELECT TOP 1 Typel FROM #TempCoverageType);
+
+    -- gfcid
+
+    SELECT b.gfcid
+
+    INTO #TempGfcid
+
+    FROM crmdb..companyteamtb a
+
+    INNER JOIN crmdb..CompanyTb b ON a.clnti = b.clnti;
+
+    SET @gfcid = (SELECT TOP 1 gfcid FROM #TempGfcid);
+
+    -- regionScope
+
+    SELECT a.RegionN
+
+    INTO #TempRegionScope
+
+    FROM clientmapdb..Lkgeographytb a
+
+    INNER JOIN companyteamtb b ON a.CountryISO2 = b.UserCountry150Cod;
+
+    SET @regionScope = (SELECT TOP 1 RegionN FROM #TempRegionScope);
+
+    -- CountryScope
+
+    SELECT UserlCountryISOCode
+
+    INTO #TempCountryScope
+
+    FROM crmdb..companyteamtb;
+
+    SET @CountryScope = (SELECT TOP 1 UserlCountryISOCode FROM #TempCountryScope);
+
+    -- roleld
+
+    SELECT rolei
+
+    INTO #TempRoleld
+
+    FROM crmdb..companyteamtb;
+
+    SET @roleld = (SELECT TOP 1 rolei FROM #TempRoleld);
+
+    -- roleName
+
+    SELECT b.Rolen
+
+    INTO #TempRoleName
+
+    FROM crmdb..companyteamtb a
+
+    INNER JOIN [LkCvrgMemberRoleTb] b ON a.Rolel = b.Rolel;
+
+    SET @roleName = (SELECT TOP 1 Rolen FROM #TempRoleName);
+
+    -- productld
+
+    SELECT Product!
+
+    INTO #TempProductld
+
+    FROM crmdb..companyteamtb;
+
+    SET @productld = (SELECT TOP 1 Product! FROM #TempProductld);
+
+         -- soeid (CreatedBy)
+
+    SELECT DISTINCT a.soeid
+
+    INTO #TempSoeidCreatedBy
+
+    FROM coredb..employeevw a
+
+    INNER JOIN crmdb..companyteamtb b ON a.ritsid = b.UpdUseri;
+
+    SET @soeidCreatedBy = (SELECT TOP 1 soeid FROM #TempSoeidCreatedBy);
+
+    -- soeid (modifiedby)
+
+    SELECT DISTINCT a.soeid
+
+    INTO #TempSoeidModifiedBy
+
+    FROM coredb..employeevw a
+
+    INNER JOIN crmdb..companyteamtb b ON a.ritsid = b.UpdUserl;
+
+    SET @soeidModifiedBy = (SELECT TOP 1 soeid FROM #TempSoeidModifiedBy);
+
+    -- integrationld
+
+    SELECT CompanyTeam!
+
+    INTO #TempIntegrationld
+
+    FROM crmdb..companyteamtb;
+
+    SET @integrationld = (SELECT TOP 1 CompanyTeam! FROM #TempIntegrationld);
+
+    -- Assign output parameters
+
+    SELECT
+
+        @soeid AS soeid,
+
+        @coverageTypeld AS coverageTypeld,
+
+        @gfcid AS gfcid,
+
+        @regionScope AS regionScope,
+
+        @CountryScope AS CountryScope,
+
+        @roleld AS roleld,
+
+        @roleName AS roleName,
+
+        @productld AS productld,
+
+        @soeidCreatedBy AS [soeid (CreatedBy)],
+
+        @soeidModifiedBy AS [soeid (modifiedby)],
+
+        @integrationld AS integrationld;
+
+    -- Drop temporary tables
+
+    DROP TABLE IF EXISTS #TempSoeid,
+
+                      #TempCoverageType,
+
+                      #TempGfcid,
+
+                      #TempRegionScope,
+
+                      #TempCountryScope,
+
+                      #TempRoleld,
+
+                      #TempRoleName,
+
+                      #TempProductld,
+
+                      #TempSoeidCreatedBy,
+
+                      #TempSoeidModifiedBy,
+
+                      #TempIntegrationld;
+
+END
+
