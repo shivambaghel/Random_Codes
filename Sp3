@@ -1,0 +1,86 @@
+CREATE PROCEDURE dbo.client_coverage
+
+    @soeid VARCHAR(50) = NULL OUTPUT,
+
+    @coverageTypeld INT = NULL OUTPUT,
+
+    @gfcid INT = NULL OUTPUT,
+
+    @regionScope VARCHAR(50) = NULL OUTPUT,
+
+    @CountryScope VARCHAR(50) = NULL OUTPUT,
+
+    @roleld INT = NULL OUTPUT,
+
+    @roleName VARCHAR(50) = NULL OUTPUT,
+
+    @productld INT = NULL OUTPUT,
+
+    @soeidCreatedBy VARCHAR(50) = NULL OUTPUT,
+
+    @soeidModifiedBy VARCHAR(50) = NULL OUTPUT,
+
+    @integrationld INT = NULL OUTPUT
+
+AS
+
+BEGIN
+
+    SELECT DISTINCT a.soeid,
+
+        b.Typel,
+
+        b.gfcid,
+
+        c.RegionN,
+
+        b.UserCountryISOCode,
+
+        b.rolei,
+
+        d.Rolen,
+
+        b.Product!,
+
+        e.soeid AS soeidCreatedBy,
+
+        f.soeid AS soeidModifiedBy,
+
+        b.CompanyTeam!
+
+    INTO @soeid,
+
+        @coverageTypeld,
+
+        @gfcid,
+
+        @regionScope,
+
+        @CountryScope,
+
+        @roleld,
+
+        @roleName,
+
+        @productld,
+
+        @soeidCreatedBy,
+
+        @soeidModifiedBy,
+
+        @integrationld
+
+    FROM coredb..employeevw a
+
+    JOIN crmdb..companyteamtb b ON a.ritsid = b.useri
+
+    JOIN crmdb..CompanyTb c ON b.clnti = c.clnti
+
+    JOIN clientmapdb..Lkgeographytb d ON d.CountryISO2 = b.UserCountry150Code
+
+    JOIN [LkCvrgMemberRoleTb] e ON b.Rolel = e.Rolel
+
+    JOIN crmdb..companyteamtb f ON a.ritsid = f.UpdUseri
+
+END
+
