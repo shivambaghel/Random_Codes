@@ -1,0 +1,84 @@
+ALTER PROCEDURE YourProcedureName
+
+AS
+
+BEGIN
+
+  SET NOCOUNT ON;
+
+  -- Declare table variable to store results
+
+  DECLARE @Results TABLE (
+
+    soeid NVARCHAR(50),
+
+    coverageTypeld NVARCHAR(50),
+
+    gfcid NVARCHAR(50),
+
+    regionScope NVARCHAR(50),
+
+    CountryScope NVARCHAR(50),
+
+    roleld NVARCHAR(50),
+
+    roleName NVARCHAR(50),
+
+    productld NVARCHAR(50),
+
+    soeidCreatedBy NVARCHAR(50),
+
+    soeidModifiedBy NVARCHAR(50),
+
+    integrationld NVARCHAR(50)
+
+  );
+
+  -- Insert results into the table variable
+
+  INSERT INTO @Results
+
+  SELECT
+
+    DISTINCT a.soeid,
+
+    t.Typel AS coverageTypeld,
+
+    b.gfcid,
+
+    g.RegionN AS regionScope,
+
+    b.UserlCountryISOCode AS CountryScope,
+
+    b.roleld,
+
+    r.Rolen AS roleName,
+
+    b.Product!,
+
+    a.soeid AS soeidCreatedBy,
+
+    a.soeid AS soeidModifiedBy,
+
+    b.CompanyTeam!
+
+  FROM coredb..employeevw a
+
+  INNER JOIN crmdb..companyteamtb b ON a.ritsid = b.useri
+
+  INNER JOIN crmdb..CompanyTb c ON a.clnti = c.clnti
+
+  INNER JOIN clientmapdb..Lkgeographytb g ON g.Country!SO2 = b.UserCountry150Cod
+
+  INNER JOIN crmdb..LkCvrgMemberRoleTb r ON b.Rolel = r.Rolel
+
+  CROSS JOIN crmdb..companyteamtb t;
+
+  -- Select results from the table variable
+
+  SELECT *
+
+  FROM @Results;
+
+END
+
