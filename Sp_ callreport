@@ -1,0 +1,74 @@
+CREATE PROCEDURE GetCallReportData
+AS
+BEGIN
+    -- Table 1: CallReportTable
+    SELECT
+        ar.Summary AS CallReportTitle,
+        DATEADD(MINUTE, ar.ActivityOffset, ar.Activitybt) AS CallReportDate,
+        ar.Activityot + ar.Duration AS ScheduleAndTime,
+        tc.CityMeetingLocation AS CityMeetingLocation,
+        ar.FinalStatusI AS CallReportStatus,
+        ev1.Ritsid AS CallReportOwner,
+        ev2.Ritsid AS CallReportOnBehalf,
+        at.Typel AS InteractionType,
+        ar.Comment AS CallReportSummary,
+        ar.DeleteInd AS DeleteIndicator,
+        ar.Crets AS CreatedDate,
+        ev3.Ritsid AS ModifiedBy,
+        ar.UpdTs AS ModifiedDate,
+        ar.ActivityI AS IntegrationID
+    INTO
+        #Table1
+    FROM
+        Activityra ar
+        JOIN Tz_CitiesTB tc ON ar.cityld = tc.cityld
+        JOIN employeevw ev1 ON ar.OwnerUseri = ev1.ritsid
+        JOIN employeevw ev2 ON ar.Creuseri = ev2.ritsid
+        JOIN ActivityTypetb at ON ar.Typel = at.Typel;
+
+    -- Table 2: ClientTable
+    SELECT
+        act.ActivityClientTb AS ClientID,
+        ct.gfcid
+    INTO
+        #Table2
+    FROM
+        ActivityClientTb act
+        JOIN CompanyTB ct ON act.ActivityClientTb = ct.ActivityClientTb;
+
+    -- Table 3: ParticipantTable
+    SELECT
+        amp.CMCids AS Participanti,
+        ct.Peoplestureicoti
+    INTO
+        #Table3
+    FROM
+        ActivityParticipantMapTb amp
+        JOIN ContactTB ct ON amp.CMCids = ct.TypeI
+    WHERE
+        amp.typei = 2;
+
+    -- Table 4: SoeidTable
+    SELECT
+        amp.Soeid AS Participanti,
+        ev3.Soeid
+    INTO
+        #Table4
+    FROM
+        ActivityParticipantMapTb amp
+        JOIN employeevw ev3 ON amp.Soeid = ev3.Soeid
+    WHERE
+        amp.typel = 1;
+
+    -- Retrieve all values from the created tables
+    SELECT * FROM #Table1;
+    SELECT * FROM #Table2;
+    SELECT * FROM #Table3;
+    SELECT * FROM #Table4;
+
+    -- Drop the temporary tables
+    DROP TABLE #Table1;
+    DROP TABLE #Table2;
+    DROP TABLE #Table3;
+    DROP TABLE #Table4;
+END
