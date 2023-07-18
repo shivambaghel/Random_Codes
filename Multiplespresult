@@ -1,0 +1,56 @@
+import org.springframework.jdbc.core.JdbcTemplate;
+import javax.sql.DataSource;
+import java.util.ArrayList;
+import java.util.List;
+
+public class DataService {
+    private JdbcTemplate jdbcTemplate;
+
+    public DataService(DataSource dataSource) {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    public void getDataFromStoredProcedure() {
+        List<PersonModel> persons = new ArrayList<>();
+        List<CarModel> cars = new ArrayList<>();
+
+        jdbcTemplate.execute(connection -> {
+            CallableStatement statement = connection.prepareCall("{ call dbo.GetSomething }");
+            boolean hasResults = statement.execute();
+
+            int resultSetIndex = 0;
+            while (hasResults) {
+                ResultSet resultSet = statement.getResultSet();
+
+                if (resultSetIndex == 0) {
+                    while (resultSet.next()) {
+                        // Map the columns from the Person table to the PersonModel properties
+                        PersonModel person = new PersonModel();
+                        person.setId(resultSet.getInt("Id"));
+                        person.setName(resultSet.getString("Name"));
+                        // ... map other properties
+
+                        persons.add(person);
+                    }
+                } else if (resultSetIndex == 1) {
+                    while (resultSet.next()) {
+                        // Map the columns from the Car table to the CarModel properties
+                        CarModel car = new CarModel();
+                        car.setId(resultSet.getInt("Id"));
+                        car.setMake(resultSet.getString("Make"));
+                        // ... map other properties
+
+                        cars.add(car);
+                    }
+                }
+
+                resultSetIndex++;
+                hasResults = statement.getMoreResults();
+            }
+
+            return null;
+        });
+
+        // At this point, 'persons' and 'cars' lists will contain the mapped data from the result sets.
+    }
+}
