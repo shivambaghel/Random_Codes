@@ -1,0 +1,45 @@
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import java.io.*;
+import java.util.*;
+
+public class CSVtoExcel {
+    public static void main(String[] args) {
+        String csvFilePath = "input.csv";
+        String excelFilePath = "output.xlsx";
+        int maxLinesPerSheet = 100000;
+
+        try (BufferedReader br = new BufferedReader(new FileReader(csvFilePath));
+             Workbook workbook = new XSSFWorkbook()) {
+
+            String line;
+            Sheet currentSheet = null;
+            int currentRowCount = 0;
+            int sheetNumber = 1;
+
+            while ((line = br.readLine()) != null) {
+                if (currentRowCount % maxLinesPerSheet == 0) {
+                    currentSheet = workbook.createSheet("Sheet" + sheetNumber);
+                    sheetNumber++;
+                    currentRowCount = 0;
+                }
+
+                String[] data = line.split(",");
+                Row row = currentSheet.createRow(currentRowCount);
+                for (int i = 0; i < data.length; i++) {
+                    Cell cell = row.createCell(i);
+                    cell.setCellValue(data[i]);
+                }
+
+                currentRowCount++;
+            }
+
+            try (FileOutputStream outputStream = new FileOutputStream(excelFilePath)) {
+                workbook.write(outputStream);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
