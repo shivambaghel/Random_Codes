@@ -1,0 +1,37 @@
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+
+public class CSVFileSplitter {
+    public static void main(String[] args) {
+        String inputFilePath = "input.csv";
+        String outputFilePathPrefix = "output";
+        int maxLinesPerFile = 100000;
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputFilePath))) {
+            int fileCount = 1;
+            int lineCount = 0;
+            String line;
+            BufferedWriter writer = new BufferedWriter(new FileWriter(outputFilePathPrefix + fileCount + ".csv"));
+
+            while ((line = reader.readLine()) != null) {
+                writer.write(line);
+                writer.newLine();
+                lineCount++;
+                
+                if (lineCount >= maxLinesPerFile) {
+                    writer.close();
+                    fileCount++;
+                    lineCount = 0;
+                    writer = new BufferedWriter(new FileWriter(outputFilePathPrefix + fileCount + ".csv"));
+                }
+            }
+            
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
