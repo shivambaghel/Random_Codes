@@ -1,0 +1,74 @@
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.InjectMocks;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.runner.RunWith;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class YourClassTest {
+
+    @Mock
+    private GsonBuilder mockGsonBuilder;
+
+    @InjectMocks
+    private YourClass yourClass;
+
+    @Test
+    public void testGetGson_Positive() {
+        Gson mockGson = mock(Gson.class);
+
+        when(mockGsonBuilder.serializeNulls()).thenReturn(mockGsonBuilder);
+        when(mockGsonBuilder.setPrettyPrinting()).thenReturn(mockGsonBuilder);
+        when(mockGsonBuilder.create()).thenReturn(mockGson);
+
+        Gson result = yourClass.getGson(mockGsonBuilder);
+
+        assertNotNull(result);
+        assertEquals(mockGson, result);
+
+        verify(mockGsonBuilder).serializeNulls();
+        verify(mockGsonBuilder).setPrettyPrinting();
+        verify(mockGsonBuilder).create();
+    }
+
+    @Test
+    public void testGetGson_Negative() {
+        when(mockGsonBuilder.serializeNulls()).thenReturn(mockGsonBuilder);
+        when(mockGsonBuilder.setPrettyPrinting()).thenReturn(mockGsonBuilder);
+        when(mockGsonBuilder.create()).thenThrow(new Exception("Simulated Exception"));
+
+        Gson result = yourClass.getGson(mockGsonBuilder);
+
+        assertNull(result);
+
+        verify(mockGsonBuilder).serializeNulls();
+        verify(mockGsonBuilder).setPrettyPrinting();
+        verify(mockGsonBuilder).create();
+    }
+
+    @Test
+    public void testGetGson_NullBuilder() {
+        Gson result = yourClass.getGson(null);
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetGson_ExceptionHandling() {
+        when(mockGsonBuilder.serializeNulls()).thenReturn(mockGsonBuilder);
+        when(mockGsonBuilder.setPrettyPrinting()).thenReturn(mockGsonBuilder);
+        when(mockGsonBuilder.create()).thenThrow(new RuntimeException("Simulated RuntimeException"));
+
+        Gson result = yourClass.getGson(mockGsonBuilder);
+
+        assertNull(result);
+
+        // Assuming you log the exception, you can verify if it's logged correctly
+        verify(mockLogger).error(anyString(), anyString());
+    }
+}
