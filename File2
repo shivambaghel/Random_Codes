@@ -1,0 +1,70 @@
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.text.ParseException;
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class YourClassTest {
+
+    private YourClass yourClass;
+
+    @Before
+    public void setUp() {
+        yourClass = new YourClass();
+    }
+
+    @Test
+    public void testConvertUTCTimeStamp() throws ParseException {
+        String date = "21-09-01 12:34:56";
+
+        UTCTimestamp expectedTimestamp = UTCTimestamp.newBuilder()
+                .setYear(2021)
+                .setMonth(9)
+                .setDay(1)
+                .setHours(12)
+                .setMinutes(34)
+                .setSeconds(56)
+                .build();
+
+        UTCTimestamp result = yourClass.convertUTCTimeStamp(date);
+
+        assertEquals(expectedTimestamp, result);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testConvertUTCTimeStampWithInvalidDate() throws ParseException {
+        String invalidDate = "invalid-date";
+
+        yourClass.convertUTCTimeStamp(invalidDate);
+    }
+
+    @Test
+    public void testConvertUTCTimeStampMockedCalendar() throws ParseException {
+        String date = "21-09-01 12:34:56";
+
+        Calendar mockedCalendar = mock(Calendar.class);
+        when(mockedCalendar.get(Calendar.YEAR)).thenReturn(2021);
+        when(mockedCalendar.get(Calendar.MONTH)).thenReturn(8); // Note: Calendar.MONTH is 0-based
+        when(mockedCalendar.get(Calendar.DATE)).thenReturn(1);
+        when(mockedCalendar.get(Calendar.HOUR_OF_DAY)).thenReturn(12);
+        when(mockedCalendar.get(Calendar.MINUTE)).thenReturn(34);
+        when(mockedCalendar.get(Calendar.SECOND)).thenReturn(56);
+
+        yourClass.setCalendar(mockedCalendar); // Assuming you have a setter for Calendar
+
+        UTCTimestamp expectedTimestamp = UTCTimestamp.newBuilder()
+                .setYear(2021)
+                .setMonth(9)
+                .setDay(1)
+                .setHours(12)
+                .setMinutes(34)
+                .setSeconds(56)
+                .build();
+
+        UTCTimestamp result = yourClass.convertUTCTimeStamp(date);
+
+        assertEquals(expectedTimestamp, result);
+    }
+}
