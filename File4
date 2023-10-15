@@ -1,0 +1,71 @@
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+public class YourTestClass {
+
+    // Create a mock for JdbcTemplate and DataSource
+    private JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+    private DataSource dataSource = mock(DataSource.class);
+
+    @Test
+    public void testGetActionItemQueryOutput_Positive() throws SQLException, InterruptedException {
+        // Arrange
+        QueryThreadUtils<ActionItemModel> queryThreadUtils = new QueryThreadUtils<>(jdbcTemplate, "your_query", ActionItemModel.class);
+        YourClass yourClass = new YourClass(jdbcTemplate); // Assuming YourClass has the getActionItemQueryOutput method
+
+        // Mocking DataSource and Connection
+        when(jdbcTemplate.getDataSource()).thenReturn(dataSource);
+        Connection connection = mock(Connection.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+
+        // Mocking QueryThreadUtils behavior
+        List<ActionItemModel> expectedResult = new ArrayList<>(); // Provide expected result
+        QueryThreadUtils<ActionItemModel> queryThread = spy(queryThreadUtils);
+        doReturn(expectedResult).when(queryThread).getResultList();
+
+        // Act
+        List<ActionItemModel> result = yourClass.getActionItemQueryOutput("your_query");
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(expectedResult, result);
+        verify(connection).close(); // Verify that connection.close() was called
+    }
+
+    @Test
+    public void testGetActionItemQueryOutput_Timeout() throws SQLException, InterruptedException {
+        // Arrange
+        QueryThreadUtils<ActionItemModel> queryThreadUtils = new QueryThreadUtils<>(jdbcTemplate, "your_query", ActionItemModel.class);
+        YourClass yourClass = new YourClass(jdbcTemplate); // Assuming YourClass has the getActionItemQueryOutput method
+
+        // Mocking DataSource and Connection
+        when(jdbcTemplate.getDataSource()).thenReturn(dataSource);
+        Connection connection = mock(Connection.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+
+        // Mocking QueryThreadUtils behavior
+        QueryThreadUtils<ActionItemModel> queryThread = spy(queryThreadUtils);
+        doNothing().when(queryThread).start(); // Simulate thread never finishing
+
+        // Act
+        List<ActionItemModel> result = yourClass.getActionItemQueryOutput("your_query");
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(connection).close(); // Verify that connection.close() was called
+    }
+
+    @Test(expected = SQLException.class)
+    public void testGetActionItemQueryOutput_Exception() throws SQLException {
+        // Arrange
+        QueryThreadUtils<ActionItemModel> queryThreadUtils = new QueryThreadUtils<>(jdbcTemplate, "your_query", ActionItemModel.class);
+        YourClass yourClass = new YourClass(jdbcTemplate); // Assuming YourClass has the getActionItemQueryOutput method
+
+        // Mocking DataSource behavior to throw an exception
+        when(jdbcTemplate.getDataSource()).thenThrow(new SQLException("Mocked DataSource Exception"));
+
+        // Act
+        yourClass.getActionItemQueryOutput("your_query"); // This should throw SQLException
+    }
+}
