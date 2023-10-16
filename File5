@@ -1,0 +1,48 @@
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Test;
+
+public class YourClassTest {
+
+    @Test
+    public void testFetchLastUpdateDate() {
+        // Create a mock ActionItemModel
+        ActionItemModel mockReport = mock(ActionItemModel.class);
+        when(mockReport.getModifiedDate()).thenReturn("2023-10-15 12:34:56"); // Set a specific modified date
+
+        // Create an instance of your class
+        YourClass yourClassInstance = new YourClass();
+
+        // Call the method
+        Date resultDate = yourClassInstance.fetchlastUpdateDate(mockReport);
+
+        // Create an expected date based on the provided modified date
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date expectedDate = null;
+        try {
+            expectedDate = dateFormat.parse("2023-10-15 12:34:56");
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        // Check if the result matches the expected date
+        assertEquals(expectedDate, resultDate);
+    }
+
+    @Test
+    public void testFetchLastUpdateDateWithParseException() {
+        // Create a mock ActionItemModel
+        ActionItemModel mockReport = mock(ActionItemModel.class);
+        when(mockReport.getModifiedDate()).thenReturn("Invalid Date"); // Set an invalid modified date
+
+        // Create an instance of your class
+        YourClass yourClassInstance = new YourClass();
+
+        // Call the method
+        Date resultDate = yourClassInstance.fetchlastUpdateDate(mockReport);
+
+        // Check if the result is not null
+        assertNotNull(resultDate);
+    }
+}
