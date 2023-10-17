@@ -1,0 +1,63 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ReadJSONFromFile {
+    public static void main(String[] args) {
+        List<String> jsonList = new ArrayList<>();
+
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader("your_file.txt"));
+            StringBuilder jsonBuilder = new StringBuilder();
+            String line;
+            boolean isInJson = false;
+            boolean foundDeleteIndicator = false;
+            int braceCount = 0;
+            int lineCount = 0;
+
+            while ((line = reader.readLine()) != null) {
+                lineCount++;
+
+                if (foundDeleteIndicator) {
+                    jsonBuilder.append(line);
+                    braceCount += line.chars().filter(ch -> ch == '{').count();
+                    braceCount -= line.chars().filter(ch -> ch == '}').count();
+                    if (braceCount == 0) {
+                        String jsonString = jsonBuilder.toString();
+                        jsonList.add(jsonString);
+                        jsonBuilder.setLength(0);
+                        isInJson = false;
+                        foundDeleteIndicator = false;
+                    }
+                } else if (isInJson) {
+                    jsonBuilder.append(line);
+                    braceCount += line.chars().filter(ch -> ch == '{').count();
+                    braceCount -= line.chars().filter(ch -> ch == '}').count();
+                    if (braceCount == 0) {
+                        isInJson = false;
+                    }
+                } else if (line.trim().contains("deleteIndicator")) {
+                    jsonBuilder.append(line);
+                    foundDeleteIndicator = true;
+                    isInJson = true;
+                    braceCount = 1;
+                } else if (line.trim().startsWith("{")) {
+                    isInJson = true;
+                    braceCount = 1;
+                    jsonBuilder.append(line);
+                }
+            }
+
+            reader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // Now jsonList contains all the JSON objects
+        for (String json : jsonList) {
+            System.out.println(json);
+        }
+    }
+}
