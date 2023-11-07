@@ -1,0 +1,90 @@
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+public class ActionItemQueryOutputTest {
+
+    @Test
+    public void getActionItemQueryOutput_withValidQuery_shouldReturnActionItemData() throws SQLException, InterruptedException {
+        // Create a mock JdbcTemplate object
+        JdbcTemplate jdbcTemplateMock = Mockito.mock(JdbcTemplate.class);
+
+        // Create a mock QueryThreadUtils object
+        QueryThreadUtils<ActionItemModel> queryThreadMock = Mockito.mock(QueryThreadUtils.class);
+
+        // Set the expected action item data
+        List<ActionItemModel> expectedActionItemData = new ArrayList<>();
+
+        // When the getActionItemQueryOutput method is called with a valid query,
+        // it should return the expected action item data
+        Mockito.when(queryThreadMock.getResultList()).thenReturn(expectedActionItemData);
+        Mockito.when(jdbcTemplateMock.getDataSource()).thenReturn(Mockito.mock(DataSource.class));
+
+        // Create an ExecutorService to execute the QueryThreadUtils thread
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+        // Submit the QueryThreadUtils thread to the ExecutorService
+        Future<List<ActionItemModel>> futureResult = executorService.submit(queryThreadMock);
+
+        // Call the getActionItemQueryOutput method
+        ActionItemQueryOutput actionItemQueryOutput = new ActionItemQueryOutput();
+        List<ActionItemModel> actualActionItemData = actionItemQueryOutput.getActionItemQueryOutput("SELECT * FROM ACTION_ITEMS");
+
+        // Wait for the QueryThreadUtils thread to finish executing
+        try {
+            actualActionItemData = futureResult.get(300, TimeUnit.MILLISECONDS);
+        } catch (ExecutionException e) {
+            fail("Query thread execution failed: " + e.getMessage());
+        } catch (TimeoutException e) {
+            fail("Query thread execution timed out");
+        } finally {
+            executorService.shutdown();
+        }
+
+        // Verify that the actual action item data matches the expected data
+        assertEquals(expectedActionItemData, actualActionItemData);
+    }
+
+    @Test
+    public void getActionItemQueryOutput_withNullDataSource_shouldThrowSQLException() {
+        // Create a mock JdbcTemplate object
+        JdbcTemplate jdbcTemplateMock = Mockito.mock(JdbcTemplate.class);
+
+        // When the getActionItemQueryOutput method is called with a null data source,
+        // it should throw an SQLException
+        Mockito.when(jdbcTemplateMock.getDataSource()).thenReturn(null);
+        ActionItemQueryOutput actionItemQueryOutput = new ActionItemQueryOutput();
+
+        assertThrows(SQLException.class, () -> {
+            actionItemQueryOutput.getActionItemQueryOutput("SELECT * FROM ACTION_ITEMS");
+        });
+    }
+
+    @Test
+    public void getActionItemQueryOutput_withQueryThreadException_shouldLogErrorMessageAndInterruptThread() {
+        // Create a mock JdbcTemplate object
+        JdbcTemplate jdbcTemplateMock = Mockito.mock(JdbcTemplate.class);
+
+        // Create a mock QueryThreadUtils object
+        QueryThreadUtils<ActionItemModel> queryThreadMock = Mockito.mock(QueryThreadUtils.class);
+
+        // Simulate an exception thrown by the QueryThreadUtils object
+        Mockito.doThrow(new RuntimeException("Query thread exception")).when(queryThreadUtils).start();
+
+        // Call the getActionItemQueryOutput method
+        ActionItemQueryOutput actionItemQueryOutput = new ActionItemQueryOutput();
+
+        assertThrows(RuntimeException.class, () -> {
+            actionItemQueryOutput.getActionItemQueryOutput("SELECT * FROM ACTION_ITEMS");
+        });
+
+        // Verify that an error message was logged and the query thread was interrupted
+        Mockito.verify(Logger.class).error("ActionItem Query Thread Interrupted:");
+        Mockito.verify(queryThreadMock).interrupt();
+    }
+}
