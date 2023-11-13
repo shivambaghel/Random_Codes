@@ -1,0 +1,72 @@
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class YourClassTest {
+
+    @Mock
+    private DataSource dataSource;
+
+    @Mock
+    private JdbcTemplate jdbcTemplate;
+
+    @Mock
+    private QueryThreadUtils<List<YourModel>> queryThread;
+
+    @InjectMocks
+    private YourClass yourClass;
+
+    @Test
+    void testGetActionItemQueryOutput() throws SQLException {
+        // Arrange
+        String query = "your test query";
+        Connection connectionMock = mock(Connection.class);
+        List<YourModel> expectedModels = Collections.singletonList(new YourModel()); // replace YourModel with the actual model class
+
+        // Mocking DataSource behavior
+        when(dataSource.getConnection()).thenReturn(connectionMock);
+
+        // Mocking JdbcTemplate behavior
+        when(jdbcTemplate.getDataSource()).thenReturn(dataSource);
+
+        // Injecting the queryThread directly into yourClass
+        yourClass.queryThread = queryThread;
+
+        // Mocking the behavior of your QueryThreadUtils
+        when(queryThread.isAlive()).thenReturn(false);
+        when(queryThread.getResultList()).thenReturn(expectedModels);
+
+        // Using ParameterizedTypeReference to capture the generic type
+        ParameterizedTypeReference<List<YourModel>> typeReference = new ParameterizedTypeReference<List<YourModel>>() {};
+        
+        // Act
+        List<YourModel> result = yourClass.getActionItemQueryOutput(query);
+
+        // Assert
+        assertEquals(expectedModels, result);
+
+        // Verify that the necessary methods were called
+        verify(dataSource).getConnection();
+        verify(jdbcTemplate).getDataSource();
+        verify(queryThread).start();
+        verify(queryThread).join(300000);
+        verify(queryThread).isAlive();
+        verify(queryThread).getResultList();
+        verify(connectionMock).close();
+    }
+}
