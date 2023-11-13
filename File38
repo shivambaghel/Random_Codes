@@ -1,0 +1,56 @@
+import static org.mockito.Mockito.*;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
+
+import javax.sql.DataSource;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.slf4j.Logger;
+
+public class YourTestClassTest {
+
+    @Test
+    public void testGetActionItemQueryOutput() throws SQLException, InterruptedException {
+        // Mock JdbcTemplate, DataSource, Connection, and Logger
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        Logger logger = mock(Logger.class);
+
+        // Set up the mock behavior for jdbcTemplate
+        when(jdbcTemplate.getDataSource()).thenReturn(dataSource);
+
+        // Set up the behavior for dataSource
+        when(dataSource.getConnection()).thenReturn(connection);
+
+        // Set up the behavior for connection
+        when(connection.isClosed()).thenReturn(false); // Assuming connection is open
+
+        // Set up the behavior of the query thread
+        QueryThreadUtils<ActionItemModel> queryThread = mock(QueryThreadUtils.class);
+        whenNew(QueryThreadUtils.class).withArguments(eq(jdbcTemplate), anyString(), eq(ActionItemModel.class)).thenReturn(queryThread);
+
+        List<ActionItemModel> expectedResultList = Collections.singletonList(new ActionItemModel(/* ... */));
+        when(queryThread.getResultList()).thenReturn(expectedResultList);
+
+        // Create an instance of YourTestClass
+        YourTestClass yourTestClass = new YourTestClass(jdbcTemplate);
+
+        // Call the method under test
+        List<ActionItemModel> result = yourTestClass.getActionItemQueryOutput("SELECT * FROM action_items");
+
+        // Verify that the expected interactions occurred
+        verify(logger).info("Entering ActionItemQueryOutput");
+        verify(logger).info("ActionItem DB Connection established: {}", connection);
+        verify(queryThread).start();
+        verify(queryThread).join(300000);
+        verify(logger).info("ActionItem DB Connection closed: {}", connection);
+
+        // Verify that the expected result is returned
+        assertEquals(expectedResultList, result);
+    }
+}
