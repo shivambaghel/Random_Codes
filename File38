@@ -54,3 +54,45 @@ public class YourTestClassTest {
         assertEquals(expectedResultList, result);
     }
 }
+
+
+
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+public class ActionItemQueryOutputTest {
+
+    @Mock
+    private JdbcTemplate jdbcTemplate;
+
+    @Mock
+    private QueryThreadUtils<ActionItemModel> queryThreadUtils;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @Test
+    public void testGetActionItemQueryOutput() throws Exception {
+        String query = "SELECT * FROM action_items";
+        List<ActionItemModel> actionItems = new ArrayList<>();
+
+        when(jdbcTemplate.getDataSource()).thenReturn(dataSource);
+        when(queryThreadUtils.getResultList()).thenReturn(actionItems);
+
+        List<ActionItemModel> result = getActionItemQueryOutput(query);
+
+        assertEquals(actionItems, result);
+        verify(queryThreadUtils).start();
+        verify(queryThreadUtils).join();
+    }
+}
+
