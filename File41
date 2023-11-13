@@ -1,0 +1,96 @@
+import lombok.Data;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+@Data
+class MyModelClass {
+    // Fields dynamically generated based on headers
+}
+
+public class ExcelReader {
+
+    public static void main(String[] args) {
+        String excelResource = "your_file.xlsx"; // Replace with your Excel file name in the resources folder
+
+        try (InputStream inputStream = ExcelReader.class.getClassLoader().getResourceAsStream(excelResource)) {
+            Workbook workbook = new XSSFWorkbook(inputStream);
+            Sheet sheet = workbook.getSheetAt(0); // Assuming the data is in the first sheet
+
+            List<MyModelClass> dataList = mapSheetToModel(sheet);
+
+            // Process the list of model instances
+            dataList.forEach(System.out::println);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static List<MyModelClass> mapSheetToModel(Sheet sheet) {
+        List<MyModelClass> dataList = new ArrayList<>();
+
+        Iterator<Row> rowIterator = sheet.iterator();
+
+        if (rowIterator.hasNext()) {
+            Row headerRow = rowIterator.next();
+            List<String> headers = getHeaders(headerRow);
+
+            while (rowIterator.hasNext()) {
+                Row currentRow = rowIterator.next();
+                Iterator<Cell> cellIterator = currentRow.cellIterator();
+
+                MyModelClass modelInstance = new MyModelClass();
+
+                for (int i = 0; i < headers.size(); i++) {
+                    String header = headers.get(i);
+                    Cell currentCell = cellIterator.next();
+                    String cellValue = getCellValueAsString(currentCell);
+                    mapCellValueToModelField(modelInstance, header, cellValue);
+                }
+
+                dataList.add(modelInstance);
+            }
+        }
+
+        return dataList;
+    }
+
+    private static List<String> getHeaders(Row headerRow) {
+        List<String> headers = new ArrayList<>();
+        Iterator<Cell> headerIterator = headerRow.cellIterator();
+
+        while (headerIterator.hasNext()) {
+            Cell currentCell = headerIterator.next();
+            headers.add(currentCell.getStringCellValue().toLowerCase());
+        }
+
+        return headers;
+    }
+
+    private static String getCellValueAsString(Cell cell) {
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue();
+            case NUMERIC:
+                return String.valueOf(cell.getNumericCellValue());
+            // Add more cases for other cell types as needed
+            default:
+                return null;
+        }
+    }
+
+    private static void mapCellValueToModelField(MyModelClass modelInstance, String header, String cellValue) {
+        // Use reflection to dynamically set fields based on header names
+        try {
+            MyModelClass.class.getDeclaredField(header).set(modelInstance, cellValue);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
+}
