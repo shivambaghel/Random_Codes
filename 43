@@ -1,0 +1,68 @@
+ X509TrustManager customX509TrustManager = new CustomX509TrustManager();
+
+        // Configure SSLContext with TrustManager
+        SSLContext sslContext = SSLContext.getInstance("SSL");
+        TrustManager[] trustAllCerts = new TrustManager[]{customX509TrustManager};
+        sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+
+        // Customize RestTemplate with SSLContext
+        SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(sslContext);
+        ClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
+        requestFactory.setSslSocketFactory(sslSocketFactory);
+
+        return new RestTemplate(requestFactory);
+
+
+
+
+        private static class CustomX509TrustManager implements X509TrustManager {
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {
+            // Do nothing, no client certificate validation
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) {
+            // Validate the server certificate
+            for (X509Certificate cert : x509Certificates) {
+                for (X509Certificate cert : x509Certificates) {
+    // Check the certificate's issuer
+    String issuerName = cert.getIssuerDN().getName();
+    System.out.println("Issuer: " + issuerName);
+
+    // Check the certificate's validity period
+    Date notBefore = cert.getNotBefore();
+    Date notAfter = cert.getNotAfter();
+    long now = System.currentTimeMillis();
+    if (now < notBefore.getTime() || now > notAfter.getTime()) {
+        throw new SSLHandshakeException("Invalid certificate: expired or not yet valid");
+    }
+
+    // Check the certificate's signature algorithm
+    String signatureAlgorithm = cert.getSigAlgName();
+    System.out.println("Signature algorithm: " + signatureAlgorithm);
+
+    // Check the certificate's subject alternative names (SANs)
+    if (cert.getSubjectAlternativeNames() != null) {
+        System.out.println("Subject alternative names (SANs):");
+        for (GeneralName san : cert.getSubjectAlternativeNames()) {
+            System.out.println("  " + san.toString());
+        }
+    }
+}
+            }
+            // If the certificate is not valid, throw an exception
+            throw new SSLHandshakeException("Invalid server certificate");
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
+        }
+    }
+}
+
+
+
+
